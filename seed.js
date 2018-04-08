@@ -1,9 +1,23 @@
 var db = require("./models")
+var faker = require('faker')
 
-var user1 = {
+var users_list = [
+  {
     username: 'stephanie',
-    password: '12345'
+    password: '12345',
+    households: []
+  },
+  {
+    username: "steven",
+    password: '12345',
+    households: []
   }
+]
+
+var snowgillHouse = {
+  name: "Snowgill",
+  members: []
+}
 
 var items_list = [
   {
@@ -12,7 +26,8 @@ var items_list = [
     category: "sports",
     image: "nothing yet",
     value: 5,
-    toKeep: false
+    toKeep: false,
+    owner: 'stephanie'
   },
   {
     title: "monstera plant",
@@ -20,23 +35,84 @@ var items_list = [
     category: 'plant',
     image: 'nothing yet',
     value: 20,
-    toKeep: false
+    toKeep: false,
+    owner: 'stephanie'
+  },
+  {
+    title: 'hockey stick 1',
+    description: 'white and black',
+    category: 'sports',
+    image: 'nothing yet',
+    value: 100,
+    toKeep: true,
+    owner: 'steven'
+  },
+  {
+    title: "hockey net",
+    description: 'hockey net with white net and red posts',
+    category: 'sports',
+    image: 'nothing yet',
+    value: 300,
+    toKeep: true,
+    owner: 'steven'
   }
 ]
 
-db.User.remove({}, function(err, users){
-  console.log('removed all users!');
-  db.User.create(user1, function(err, newUser){
-    if(err){
-      console.log('error creating user!')
-      return;
-    }
-    console.log("created", newUser.username, '!' )
+function makeUsers(){
+  return db.User.remove({}).then(function(){
+    console.log("1 TRYING TO CREATE USERS <<<<")
+    return db.User.create(users_list).then(function(newUsers){
+      console.log("1 created", newUsers.length, 'users!' )
+    })
+  }).catch(function(error){
+    console.log('error creating users!', error)
   })
+}
 
-  db.Item.remove({}, function(err){
-    console.log('removed all items')
-    items_list.forEach(function(itemData){
+function makeHouseholds() {
+  return db.Household.remove({}).then(function(){
+    console.log("2 TRYING TO CREATE HOUSEHOLD <<<");
+    return new db.Household({
+      name: snowgillHouse.name,
+      members: snowgillHouse.members
+    })
+  }).then(function(ourHouse){
+    console.log('2 our house name', ourHouse.name)
+    return db.User.findOne({username: "stephanie"})
+    .then(function(foundUser1){
+      console.log("2 finding user1 for household:", foundUser1)
+      ourHouse.members.push(foundUser1)
+      foundUser1.households.push(ourHouse)
+      return foundUser1.save().then(function(savedUser){
+        console.log("TRYING TO SAVE HOUSEHOLD TO USER", savedUser)
+        return ourHouse
+      })
+    })
+  }).then(function(ourHouse){
+    console.log('3 this is our house!', ourHouse);
+    return db.User.findOne({username: 'steven'})
+    .then(function(foundUser2){
+      console.log('3 finding user for household:', foundUser2.username)
+      ourHouse.members.push(foundUser2)
+      foundUser2.households.push(ourHouse)
+      return foundUser2.save().then(function(savedUser){
+        console.log("TRYING TO SAVE HOUSE HOLD TO USER", savedUser);
+        return ourHouse
+      })
+      console.log('3 house members', ourHouse.members);
+    })
+  }).then(function(ourHouse){
+    console.log("4 ready to save house")
+    return ourHouse.save().then(function(savedHouse){
+      console.log('4 saved', savedHouse.name, "house")
+    })
+  })
+}
+function makeItems(){
+  return db.Item.remove({}).then(function(){
+    console.log('5 removed all items')
+  }).then(async function(){
+    for(let itemData of items_list){
       var item = new db.Item({
         title: itemData.title,
         description: itemData.description,
@@ -45,19 +121,27 @@ db.User.remove({}, function(err, users){
         value: itemData.value,
         toKeep: itemData.toKeep
       })
-      db.User.findOne({username: 'stephanie'}, function(err, foundUser){
-        console.log("found user", foundUser.username)
-        if (err){
-          return console.log("ERROR FINDING USER!", err)
-        }
+      await db.User.findOne({username: itemData.owner}).then(function(foundUser){
+        console.log("6A finding user for item", foundUser.username, "<<<<<<<<")
         item.owner = foundUser
-        item.save(function(err, savedItem){
-          if(err){
-            return console.log('error saving item!', err)
-          }
-          console.log("saved item", item.title)
-        })
       })
-    })
+      await db.Household.findOne({name: "Snowgill"}).then(function(foundHouse){
+        console.log("6B finding household for item", foundHouse.name)
+        item.household = foundHouse
+        console.log("6B owner and household!", item.owner, item.household)
+      })
+      await item.save().then(function(savedItem){
+        console.log(savedItem)
+        console.log("6C saved item", savedItem.title, savedItem.owner.username)
+      })
+    }
   })
-})
+}
+
+async function seedDB(){
+  await makeUsers();
+  await makeHouseholds();
+  await makeItems();
+}
+
+seedDB();

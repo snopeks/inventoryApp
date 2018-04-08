@@ -4,9 +4,15 @@ var mongoose = require('mongoose'),
 
 var UserSchema = new Schema ({
   username: String,
-  password: String
+  password: String,
+  households: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "Household"
+    }
+  ]
 })
 
 UserSchema.plugin(passportLocalMongoose);
-var User = mongoose.model("user", UserSchema);
+var User = mongoose.model("User", UserSchema);
 module.exports = User;

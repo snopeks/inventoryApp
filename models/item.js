@@ -12,7 +12,12 @@ var ItemSchema = new Schema({
   },
   image: String,
   value: Number,
-  toKeep: Boolean
+  toKeep: Boolean,
+  household: {
+    type: Schema.Types.ObjectId,
+    ref: "Household"
+  }
+
 })
 
 var Item = mongoose.model("Item", ItemSchema)
