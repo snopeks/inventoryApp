@@ -71,6 +71,15 @@ app.get('/api/users', function(req, res){
   })
 
 })
+//Login users
+app.post('/login',
+  passport.authenticate('local'),
+  function(req, res){
+    console.log("in the login fn");
+    console.log(req.user);
+    res.redirect('/profile', req.user.username)
+
+});
 //Signup Route and auth user at the same time
 app.post('/signup', function (req, res) {
  console.log(req.body.username, req.body.password);
