@@ -31,16 +31,25 @@ app.use(function (req, res, next) {
   res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT,DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers');
 
-  // //Remove caching
-  // res.setHeader('Cache-Control', 'no-cache');
-  // next();
+  //Remove caching
+  res.setHeader('Cache-Control', 'no-cache');
+  next();
 });
+
+app.get('/', function(req, res){
+  console.log(req.body);
+  res.send("Welcome to the inventory api!");
+})
 
 app.get('/api/inventory', function(req, res){
   db.Item.find({})
   .populate({
     path: "owner",
     select: "username"
+  })
+  .populate({
+    path: "household",
+    select: "name"
   })
   .exec(function(err, items){
     if(err){
@@ -66,6 +75,7 @@ app.get('/api/users', function(req, res){
   .exec(function(err, users){
     if(err){
       console.log('there was an error finding users')
+      res.send("error!", {error: err})
     }
     res.json(users)
   })
@@ -76,9 +86,8 @@ app.post('/login',
   passport.authenticate('local'),
   function(req, res){
     console.log("in the login fn");
-    console.log(req.user);
-    res.redirect('/profile', req.user.username)
-
+    // console.log("THIS IS THE USER OBJECT", req.user);
+    res.status(200).send(req.user);
 });
 //Signup Route and auth user at the same time
 app.post('/signup', function (req, res) {
@@ -99,5 +108,6 @@ app.post('/signup', function (req, res) {
 
 
 app.listen(process.env.PORT || 3000, function() {
-  console.log("server started!!");
+  console.log(`server started!`);
+  console.log(process.env.PORT);
 });
