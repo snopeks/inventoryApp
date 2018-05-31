@@ -31,17 +31,20 @@ app.use(function (req, res, next) {
   res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT,DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers');
 
-  //Remove caching
+  //Remove caching (WITHOUT THIS THE APP WON'T RUN LOCALLY)
   res.setHeader('Cache-Control', 'no-cache');
   next();
 });
 
+//home route
 app.get('/', function(req, res){
   console.log(req.body);
   res.send("Welcome to the inventory api!");
 })
 
+//get all inventory
 app.get('/api/inventory', function(req, res){
+  console.log('here isreq.user', req.query.username)
   db.Item.find({})
   .populate({
     path: "owner",
@@ -58,9 +61,29 @@ app.get('/api/inventory', function(req, res){
     res.json(items)
   })
 })
+//add an item to user household
+app.post('/api/inventory/', function(req, res){
+  console.log('this is the user', req.user)
+  const newItem = new Item({
+    title: req.body.title, 
+    description: req.body.desc,
+    category: req.body.category,
+    owner: req.user,
+    image: req.body.image,
+    value: req.body.value, 
+    toKeep: req.body.keep,
+    household: req.body.household
+  })
+  newItem.save(function(err, item){
+    if(err){
+      res.status(500).send(err)
+    }
+    res.send(newItem)
+  })
+})
+//get all households and members
 app.get('/api/households', function(req, res){
   db.Household.find({})
-  .populate('members')
   .exec(function(err, households){
     if(err){
       console.log('there was an error finding households')
@@ -69,9 +92,37 @@ app.get('/api/households', function(req, res){
   })
 })
 
+//create a new household and add house to current user
+app.post('/api/households', function(req,res){
+  console.log('this is req.body', req.body)
+  console.log(req.body.name)
+  const newHouse = new db.Household({
+    name: req.body.name,
+    items: []
+  })
+  db.User.findOne({username: req.body.username})
+  .exec(function(err, foundUser){
+    if(err){
+     console.log('error finding user!')
+    }
+    console.log("here is found user!", foundUser)
+    foundUser.households.push(newHouse)
+    foundUser.save().then(function(savedUser){
+      console.log("saving household to user!")
+      return; 
+    })
+  })
+  newHouse.save(function(err, household){
+    if(err){
+      console.log("error saving new household")
+    }
+    res.send(household)
+  })
+})
+//get all users
 app.get('/api/users', function(req, res){
   db.User.find({})
-  .populate('households')
+  .populate({path: 'households', select: "name"})
   .exec(function(err, users){
     if(err){
       console.log('there was an error finding users')
@@ -81,6 +132,24 @@ app.get('/api/users', function(req, res){
   })
 
 })
+//get one user based on username
+app.get('/api/users/:username', function(req, res){
+  console.log(req.params.username)
+  db.User.find({username: req.params.username})
+  .populate({
+    path: "households",
+    select: "name"
+  })
+  .exec(function(err, user){
+    if(err){
+      console.log('there was an error getting your user!')
+      re.send("error!", {error: err})
+    }
+    res.json(user)
+  })
+})
+
+
 //Login users
 app.post('/login',
   passport.authenticate('local'),
@@ -109,5 +178,4 @@ app.post('/signup', function (req, res) {
 
 app.listen(process.env.PORT || 3000, function() {
   console.log(`server started!`);
-  console.log(process.env.PORT);
 });

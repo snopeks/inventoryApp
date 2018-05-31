@@ -6,18 +6,14 @@ var ItemSchema = new Schema({
   title: String,
   description: String,
   category: String,
+  household: String,
   owner: {
     type: Schema.Types.ObjectId,
     ref: "User"
   },
   image: String,
   value: Number,
-  toKeep: Boolean,
-  household: {
-    type: Schema.Types.ObjectId,
-    ref: "Household"
-  }
-
+  toKeep: Boolean
 })
 
 var Item = mongoose.model("Item", ItemSchema)
