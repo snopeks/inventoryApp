@@ -5,18 +5,21 @@ var users_list = [
   {
     username: 'stephanie',
     password: '12345',
-    households: []
+    households: [],
+    items: []
   },
   {
     username: "steven",
     password: '12345',
-    households: []
+    households: [],
+    items: []
   }
 ]
 
 var snowgillHouse = {
   name: "Snowgill",
-  members: []
+  members: [],
+  items: []
 }
 
 var items_list = [
@@ -81,7 +84,6 @@ function makeHouseholds() {
     return db.User.findOne({username: "stephanie"})
     .then(function(foundUser1){
       console.log("2 finding user1 for household:", foundUser1)
-      ourHouse.members.push(foundUser1)
       foundUser1.households.push(ourHouse)
       return foundUser1.save().then(function(savedUser){
         console.log("TRYING TO SAVE HOUSEHOLD TO USER", savedUser)
@@ -93,7 +95,6 @@ function makeHouseholds() {
     return db.User.findOne({username: 'steven'})
     .then(function(foundUser2){
       console.log('3 finding user for household:', foundUser2.username)
-      ourHouse.members.push(foundUser2)
       foundUser2.households.push(ourHouse)
       return foundUser2.save().then(function(savedUser){
         console.log("TRYING TO SAVE HOUSE HOLD TO USER", savedUser);

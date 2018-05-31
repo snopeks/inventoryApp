@@ -4,10 +4,10 @@ var Schema = mongoose.Schema;
 
 var HouseSchema = new Schema({
   name: String,
-  members: [
+  items: [
     {
-      type: Schema.Types.ObjectId,
-      ref: "User"
+      type: Schema.Types.ObjectId, 
+      ref: "Item"
     }
   ]
 })
